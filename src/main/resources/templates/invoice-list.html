@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoices</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h3><i class="fas fa-receipt"></i> Invoices</h3>
+        <a href="/web/" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+        <tr>
+            <th>Invoice No</th>
+            <th>Client</th>
+            <th>PO Number</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="inv : ${invoiceList}">
+            <td><strong th:text="${inv.invoiceNumber}"></strong></td>
+            <td th:text="${inv.purchaseOrder.clientCompany.companyName}"></td>
+            <td th:text="${inv.purchaseOrder.poNumber}"></td>
+            <td><strong th:text="'₹' + ${#numbers.formatDecimal(inv.totalAmount, 1, 2)}"></strong></td>
+            <td th:text="${#temporals.format(inv.invoiceDate, 'dd-MMM-yyyy')}"></td>
+            <td>
+                        <span class="badge"
+                              th:classappend="${inv.status.name() == 'SENT'} ? 'bg-success' : 'bg-warning'"
+                              th:text="${inv.status}"></span>
+            </td>
+            <td>
+                <a th:href="@{'/web/invoice/view/' + ${inv.id}}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-eye"></i> View
+                </a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

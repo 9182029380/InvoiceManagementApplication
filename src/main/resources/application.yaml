@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: invoice-management
+
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/invoicemanagementdb
+    username: root
+    password: root
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: corporatetrainersharath123@gmail.com
+    password: oacv xbna tzcl fxep
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+server:
+  port: 9091

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Purchase Order</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h4>Create Purchase Order</h4>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/web/po/save}" th:object="${po}" method="post">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">PO Number *</label>
+                        <input type="text" class="form-control" th:field="*{poNumber}" required>
+                        <small class="text-muted">Enter unique PO number from client</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Client Company *</label>
+                        <select class="form-select" th:field="*{clientCompany.id}" required>
+                            <option value="">Select Client</option>
+                            <option th:each="client : ${clients}"
+                                    th:value="${client.id}"
+                                    th:text="${client.companyName}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Training Details *</label>
+                    <textarea class="form-control" th:field="*{trainingDetails}" rows="3" required
+                              placeholder="Enter training program details, duration, topics covered"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Training Amount (₹) *</label>
+                        <input type="number" class="form-control" th:field="*{trainingAmount}"
+                               step="0.01" min="0" required>
+                        <small class="text-muted">Base amount before GST</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Client PAN Number *</label>
+                        <input type="text" class="form-control" th:field="*{clientPanNumber}"
+                               pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" maxlength="10" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Client GST Number *</label>
+                        <input type="text" class="form-control" th:field="*{clientGstNumber}"
+                               maxlength="15" required>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> 18% GST will be automatically calculated on the training amount.
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-save"></i> Create Purchase Order
+                    </button>
+                    <a href="/web/" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    container_name: invoice-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: invoicemanagementdb
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      # Map container MySQL 3306 to host 3307 to avoid conflicts if host already runs MySQL on 3306
+      - "3307:3306"
+
+  app:
+    build: .
+    container_name: invoice-app
+    restart: on-failure
+    ports:
+      - "9091:9091"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/invoicemanagementdb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: corporatetrainersharath123@gmail.com
+      SPRING_MAIL_PASSWORD: oacv xbna tzcl fxep
+    depends_on:
+      - db
+
+volumes:
+  db_data:

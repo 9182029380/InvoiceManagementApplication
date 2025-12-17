@@ -2,6 +2,7 @@ package com.example.invoice_management.service;
 
 import com.example.invoice_management.entity.POStatus;
 import com.example.invoice_management.entity.PurchaseOrder;
+import com.example.invoice_management.entity.ClientCompany;
 import com.example.invoice_management.repository.ClientCompanyRepository;
 import com.example.invoice_management.repository.PurchaseOrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,20 @@ public class PurchaseOrderService {
 
     @Transactional
     public PurchaseOrder createPurchaseOrder(PurchaseOrder po) {
+        // Ensure client company exists and populate PAN/GST from client record
+        if (po.getClientCompany() == null || po.getClientCompany().getId() == null) {
+            throw new RuntimeException("Client company is required for creating a PO");
+        }
+
+        final Long clientId = po.getClientCompany().getId();
+
+        ClientCompany client = clientCompanyRepository.findById(clientId)
+                .orElseThrow(() -> new RuntimeException("Client not found: " + clientId));
+
+        // Pull PAN and GST from client record
+        po.setClientPanNumber(client.getPanNumber());
+        po.setClientGstNumber(client.getGstNumber());
+
         // Calculate GST (18%)
         po.setGstPercentage(18.0);
         po.setGstAmount(po.getTrainingAmount() * 0.18);

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoice-app
+  namespace: invoice-management
+  labels:
+    app: invoice-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: invoice-app
+  template:
+    metadata:
+      labels:
+        app: invoice-app
+    spec:
+      containers:
+        - name: invoice-app
+          # Replace with your image registry path for production (e.g. myregistry/invoice-management:latest)
+          image: invoice-management:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9091
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://invoice-mysql:3306/invoicemanagementdb"
+            - name: SPRING_MAIL_HOST
+              value: "smtp.gmail.com"
+            - name: SPRING_MAIL_PORT
+              value: "587"
+          envFrom:
+            - secretRef:
+                name: invoice-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9091
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9091
+            initialDelaySeconds: 15
+            periodSeconds: 15
+

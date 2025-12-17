@@ -37,21 +37,17 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label">Training Amount (₹) *</label>
                         <input type="number" class="form-control" th:field="*{trainingAmount}"
                                step="0.01" min="0" required>
                         <small class="text-muted">Base amount before GST</small>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Client PAN Number *</label>
-                        <input type="text" class="form-control" th:field="*{clientPanNumber}"
-                               pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" maxlength="10" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Client GST Number *</label>
-                        <input type="text" class="form-control" th:field="*{clientGstNumber}"
-                               maxlength="15" required>
+                    <div class="col-md-6 mb-3 d-flex align-items-center">
+                        <div>
+                            <label class="form-label">Client PAN / GST</label>
+                            <div class="form-text">PAN and GST will be populated from the selected client.</div>
+                        </div>
                     </div>
                 </div>
 

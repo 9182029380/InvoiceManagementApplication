@@ -25,11 +25,16 @@
         <button onclick="window.print()" class="btn btn-primary">
             <i class="fas fa-print"></i> Print
         </button>
+
+        <!-- Download button -->
+        <a th:href="@{'/web/invoice/download/' + ${invoice.id}}" class="btn btn-outline-primary">
+            <i class="fas fa-download"></i> Download
+        </a>
+
         <form th:action="@{'/web/invoice/send/' + ${invoice.id}}" method="post" style="display: inline;">
-            <button type="submit" class="btn btn-success"
-                    th:disabled="${invoice.status.name() == 'SENT'}">
+            <button type="submit" class="btn btn-success">
                 <i class="fas fa-envelope"></i>
-                <span th:text="${invoice.status.name() == 'SENT'} ? 'Email Sent' : 'Send Email'"></span>
+                <span th:text="${invoice.status.name() == 'SENT'} ? 'Resend Email' : 'Send Email'"></span>
             </button>
         </form>
     </div>
@@ -69,6 +74,8 @@
             <h6>BILL TO:</h6>
             <p><strong th:text="${invoice.purchaseOrder.clientCompany.companyName}"></strong></p>
             <p th:text="${invoice.purchaseOrder.clientCompany.address}"></p>
+            <p><strong>Email:</strong> <span th:text="${invoice.purchaseOrder.clientCompany.email}"></span></p>
+            <p><strong>Phone:</strong> <span th:text="${invoice.purchaseOrder.clientCompany.phone}"></span></p>
             <p><strong>PAN:</strong> <span th:text="${invoice.purchaseOrder.clientPanNumber}"></span></p>
             <p><strong>GST:</strong> <span th:text="${invoice.purchaseOrder.clientGstNumber}"></span></p>
         </div>
@@ -105,6 +112,7 @@
             <p><strong>Bank Name:</strong> <span th:text="${invoice.ourCompany.bankName}"></span></p>
             <p><strong>Account Number:</strong> <span th:text="${invoice.ourCompany.accountNumber}"></span></p>
             <p><strong>IFSC Code:</strong> <span th:text="${invoice.ourCompany.ifscCode}"></span></p>
+            <p><strong>Bank Address:</strong> <span th:text="${invoice.ourCompany.bankAddress}"></span></p>
         </div>
 
         <div class="mt-5 text-end">

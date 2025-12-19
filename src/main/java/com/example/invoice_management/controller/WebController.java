@@ -4,10 +4,19 @@ import com.example.invoice_management.entity.*;
 import com.example.invoice_management.repository.InvoiceRepository;
 import com.example.invoice_management.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.OutputStream;
 
 @Controller
 @RequestMapping("/web")
@@ -72,9 +81,31 @@ public class WebController {
     @PostMapping("/po/save")
     public String savePO(@ModelAttribute PurchaseOrder po,
                          RedirectAttributes redirectAttributes) {
-        poService.createPurchaseOrder(po);
-        redirectAttributes.addFlashAttribute("success",
-                "Purchase Order created successfully!");
+        try {
+            // Check if this is an update (PO already exists in DB) or a new creation
+            boolean isExisting = po.getPoNumber() != null && !po.getPoNumber().isBlank();
+            if (isExisting) {
+                try {
+                    poService.getPurchaseOrder(po.getPoNumber());
+                    // PO exists -> update
+                    poService.updatePurchaseOrder(po.getPoNumber(), po);
+                    redirectAttributes.addFlashAttribute("success",
+                            "Purchase Order updated successfully!");
+                } catch (Exception e) {
+                    // PO does not exist -> create new
+                    poService.createPurchaseOrder(po);
+                    redirectAttributes.addFlashAttribute("success",
+                            "Purchase Order created successfully!");
+                }
+            } else {
+                poService.createPurchaseOrder(po);
+                redirectAttributes.addFlashAttribute("success",
+                        "Purchase Order created successfully!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/web/po/new";
+        }
         return "redirect:/web/";
     }
 
@@ -82,6 +113,34 @@ public class WebController {
     public String listPOs(Model model) {
         model.addAttribute("poList", poService.getAllPurchaseOrders());
         return "po-list";
+    }
+
+    // new: edit PO
+    @GetMapping("/po/edit/{poNumber}")
+    public String editPO(@PathVariable String poNumber, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            PurchaseOrder po = poService.getPurchaseOrder(poNumber);
+            model.addAttribute("po", po);
+            model.addAttribute("clients", companyService.getAllClientCompanies());
+            return "po-form";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/web/po/list";
+        }
+    }
+
+    // new: delete PO (web)
+    @PostMapping("/po/delete/{poNumber}")
+    public String deletePO(@PathVariable String poNumber,
+                           @RequestParam(defaultValue = "false") boolean force,
+                           RedirectAttributes redirectAttributes) {
+        try {
+            poService.deletePurchaseOrder(poNumber, force);
+            redirectAttributes.addFlashAttribute("success", "PO deleted successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Error deleting PO: " + e.getMessage());
+        }
+        return "redirect:/web/po/list";
     }
 
     // Invoice Management
@@ -131,6 +190,7 @@ public class WebController {
             Invoice invoice = invoiceService.getInvoice(id);
             emailService.sendInvoiceEmail(invoice, invoice.getPdfPath());
 
+            // allow re-send: always mark SENT (keeps current behaviour)
             invoice.setStatus(InvoiceStatus.SENT);
             invoiceRepository.save(invoice);
 
@@ -147,5 +207,37 @@ public class WebController {
     public String listInvoices(Model model) {
         model.addAttribute("invoiceList", invoiceService.getAllInvoices());
         return "invoice-list";
+    }
+
+    // new: download invoice (web)
+    @GetMapping("/invoice/download/{id}")
+    public void downloadInvoice(@PathVariable Long id, HttpServletResponse response) {
+        try {
+            Invoice invoice = invoiceService.getInvoice(id);
+            if (invoice.getPdfPath() == null) {
+                String pdfPath = pdfService.generateInvoicePDF(invoice);
+                invoice.setPdfPath(pdfPath);
+                invoiceRepository.save(invoice);
+            }
+
+            File file = new File(invoice.getPdfPath());
+            if (!file.exists()) throw new RuntimeException("Invoice PDF not found: " + invoice.getPdfPath());
+
+            response.setContentType("application/pdf");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"");
+
+            try (FileInputStream in = new FileInputStream(file);
+                 OutputStream out = response.getOutputStream()) {
+                byte[] buffer = new byte[4096];
+                int length;
+                while ((length = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, length);
+                }
+                out.flush();
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error downloading invoice: " + e.getMessage());
+        }
     }
 }

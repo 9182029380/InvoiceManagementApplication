@@ -28,4 +28,17 @@ public class PurchaseOrderController {
     public ResponseEntity<List<PurchaseOrder>> getAllPOs() {
         return ResponseEntity.ok(poService.getAllPurchaseOrders());
     }
+
+    @PutMapping("/{poNumber}")
+    public ResponseEntity<PurchaseOrder> updatePO(@PathVariable String poNumber,
+                                                  @RequestBody PurchaseOrder po) {
+        return ResponseEntity.ok(poService.updatePurchaseOrder(poNumber, po));
+    }
+
+    @DeleteMapping("/{poNumber}")
+    public ResponseEntity<Void> deletePO(@PathVariable String poNumber,
+                                         @RequestParam(defaultValue = "false") boolean force) {
+        poService.deletePurchaseOrder(poNumber, force);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -24,6 +24,7 @@
             <th>Total</th>
             <th>Date</th>
             <th>Status</th>
+            <th>Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -39,6 +40,17 @@
                         <span class="badge"
                               th:classappend="${po.status.name() == 'PENDING'} ? 'bg-warning' : 'bg-success'"
                               th:text="${po.status}"></span>
+            </td>
+            <td>
+                <a th:href="@{'/web/po/edit/' + ${po.poNumber}}" class="btn btn-sm btn-primary mb-1">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+
+                <form th:action="@{'/web/po/delete/' + ${po.poNumber}}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete PO?');">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
             </td>
         </tr>
         </tbody>

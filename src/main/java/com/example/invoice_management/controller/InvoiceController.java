@@ -7,9 +7,13 @@ import com.example.invoice_management.service.EmailService;
 import com.example.invoice_management.service.InvoiceService;
 import com.example.invoice_management.service.PDFService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +47,8 @@ public class InvoiceController {
     }
 
     @PostMapping("/send/{invoiceId}")
-    public ResponseEntity<Map<String, String>> sendInvoice(@PathVariable Long invoiceId) {
+    public ResponseEntity<Map<String, String>> sendInvoice(@PathVariable Long invoiceId,
+                                                           @RequestParam(defaultValue = "true") boolean markSent) {
         Invoice invoice = invoiceService.getInvoice(invoiceId);
 
         if (invoice.getPdfPath() == null) {
@@ -54,8 +59,10 @@ public class InvoiceController {
 
         emailService.sendInvoiceEmail(invoice, invoice.getPdfPath());
 
-        invoice.setStatus(InvoiceStatus.SENT);
-        invoiceRepository.save(invoice);
+        if (markSent) {
+            invoice.setStatus(InvoiceStatus.SENT);
+            invoiceRepository.save(invoice);
+        }
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "Invoice sent successfully to " +
@@ -72,5 +79,28 @@ public class InvoiceController {
     @GetMapping
     public ResponseEntity<List<Invoice>> getAllInvoices() {
         return ResponseEntity.ok(invoiceService.getAllInvoices());
+    }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<FileSystemResource> downloadInvoice(@PathVariable Long id) {
+        Invoice invoice = invoiceService.getInvoice(id);
+        if (invoice.getPdfPath() == null) {
+            String pdfPath = pdfService.generateInvoicePDF(invoice);
+            invoice.setPdfPath(pdfPath);
+            invoiceRepository.save(invoice);
+        }
+
+        File file = new File(invoice.getPdfPath());
+        if (!file.exists()) {
+            throw new RuntimeException("Invoice PDF not found: " + invoice.getPdfPath());
+        }
+
+        String filename = file.getName();
+        FileSystemResource resource = new FileSystemResource(file);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(resource);
     }
 }

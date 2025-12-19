@@ -45,6 +45,8 @@ public class OurCompany {
     @Column(nullable = false)
     private String phone;
 
+    @Column(name = "bank_address")
+    private String bankAddress;
+
     private LocalDate createdDate;
 }
-

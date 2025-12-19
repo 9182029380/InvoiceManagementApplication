@@ -17,9 +17,12 @@ public class PDFService {
 
     public String generateInvoicePDF(Invoice invoice) {
         try {
-            String fileName = invoice.getPurchaseOrder().getClientCompany().getCompanyName()
-                    .replaceAll("[^a-zA-Z0-9]", "_") + "_"
-                    + invoice.getInvoiceDate() + ".pdf";
+            String clientName = invoice.getPurchaseOrder().getClientCompany().getCompanyName();
+            String sanitizedClient = clientName.replaceAll("[^a-zA-Z0-9]", "_");
+            String datePart = invoice.getInvoiceDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            String poNumber = invoice.getPurchaseOrder().getPoNumber();
+
+            String fileName = sanitizedClient + "_" + datePart + "_" + poNumber + ".pdf";
 
             String filePath = "invoices/" + fileName;
             new java.io.File("invoices").mkdirs();
@@ -38,7 +41,9 @@ public class PDFService {
             document.add(new Paragraph(invoice.getOurCompany().getAddress()));
             document.add(new Paragraph("PAN: " + invoice.getOurCompany().getPanNumber()));
             document.add(new Paragraph("GST: " + invoice.getOurCompany().getGstNumber()));
+            // Add email and phone
             document.add(new Paragraph("Email: " + invoice.getOurCompany().getEmail()));
+            document.add(new Paragraph("Phone: " + invoice.getOurCompany().getPhone()));
 
             // Invoice Details
             document.add(new Paragraph("\nInvoice Number: " + invoice.getInvoiceNumber()).setBold());
@@ -51,6 +56,10 @@ public class PDFService {
             ClientCompany client = invoice.getPurchaseOrder().getClientCompany();
             document.add(new Paragraph(client.getCompanyName()));
             document.add(new Paragraph(client.getAddress()));
+            document.add(new Paragraph("Email: " + client.getEmail()));
+            if (client.getPhone() != null) {
+                document.add(new Paragraph("Phone: " + client.getPhone()));
+            }
             document.add(new Paragraph("PAN: " + client.getPanNumber()));
             document.add(new Paragraph("GST: " + client.getGstNumber()));
 
@@ -80,6 +89,10 @@ public class PDFService {
             document.add(new Paragraph("Bank: " + invoice.getOurCompany().getBankName()));
             document.add(new Paragraph("Account: " + invoice.getOurCompany().getAccountNumber()));
             document.add(new Paragraph("IFSC: " + invoice.getOurCompany().getIfscCode()));
+            // add bank address if present
+            if (invoice.getOurCompany().getBankAddress() != null) {
+                document.add(new Paragraph("Bank Address: " + invoice.getOurCompany().getBankAddress()));
+            }
 
             document.close();
             return filePath;

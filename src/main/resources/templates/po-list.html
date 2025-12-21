@@ -51,6 +51,13 @@
                         <i class="fas fa-trash"></i> Delete
                     </button>
                 </form>
+                <!-- Force delete form: visible as small danger outline to allow overriding PO with invoices -->
+                <form th:action="@{'/web/po/delete/' + ${po.poNumber}}" method="post" style="display:inline; margin-left:6px;">
+                    <input type="hidden" name="force" value="true" />
+                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Force delete PO? This will remove the PO even if invoices exist.');">
+                        <i class="fas fa-trash-alt"></i> Force Delete
+                    </button>
+                </form>
             </td>
         </tr>
         </tbody>

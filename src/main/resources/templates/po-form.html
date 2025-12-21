@@ -18,6 +18,8 @@
                         <label class="form-label">PO Number *</label>
                         <input type="text" class="form-control" th:field="*{poNumber}"
                                th:readonly="${po.poNumber} != null" required>
+                        <!-- Ensure PO number is submitted even when readonly by adding a hidden input when editing -->
+                        <input type="hidden" th:if="${po.poNumber} != null" th:field="*{poNumber}" />
                         <small class="text-muted">Enter unique PO number from client</small>
                     </div>
                     <div class="col-md-6 mb-3">

@@ -33,7 +33,11 @@ public class PDFService {
         try {
             String fileName = "Invoice_" + invoice.getInvoiceNumber() + ".pdf";
             String filePath = Paths.get("invoices", fileName).toString();
-            new java.io.File("invoices").mkdirs();
+            // Ensure invoices directory exists (ignore result intentionally but check for potential failure in future)
+            java.io.File invoicesDir = new java.io.File("invoices");
+            if (!invoicesDir.exists()) {
+                invoicesDir.mkdirs();
+            }
 
             PdfWriter writer = new PdfWriter(new FileOutputStream(filePath));
             PdfDocument pdf = new PdfDocument(writer);
@@ -179,10 +183,20 @@ public class PDFService {
 
 
             amountTable.addCell(netLabel);
-
+            // Net payable value cell (was missing)
+            amountTable.addCell(amountValue(invoice.getTotalAmount()));
 
             document.add(amountTable);
             document.add(new Paragraph("\n"));
+
+            // Amount in words (display rupees and paise)
+            try {
+                String words = convertAmountToWords(invoice.getTotalAmount());
+                document.add(new Paragraph("Amount (in words): " + words).setItalic());
+                document.add(new Paragraph("\n"));
+            } catch (Exception ignored) {
+                // Non-critical: if conversion fails, continue without breaking PDF generation
+            }
 
             // =====================================================
             // BANK DETAILS
@@ -249,5 +263,57 @@ public class PDFService {
         return new Cell()
                 .setTextAlignment(TextAlignment.RIGHT)
                 .add(new Paragraph("₹" + String.format("%.2f", value)));
+    }
+
+    // Convert amount to words (handles rupees and paise)
+    private String convertAmountToWords(double amount) {
+        if (amount < 0) return "minus " + convertAmountToWords(-amount);
+        long rupees = (long) amount;
+        int paise = (int) Math.round((amount - rupees) * 100);
+
+        String rupeesWords = (rupees == 0) ? "zero rupees" : numberToWords(rupees) + " rupees";
+        String paiseWords = (paise == 0) ? "" : " and " + numberToWords(paise) + " paise";
+
+        return capitalizeFirst(rupeesWords + paiseWords + " only");
+    }
+
+    private String numberToWords(long n) {
+        if (n == 0) return "zero";
+        final String[] ones = {"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+                "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"};
+        final String[] tens = {"", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"};
+
+        StringBuilder words = new StringBuilder();
+
+        if (n >= 1_00_00_000) { // crores (Indian grouping)
+            words.append(numberToWords(n / 1_00_00_000)).append(" crore ");
+            n = n % 1_00_00_000;
+        }
+        if (n >= 1_00_000) { // lakhs
+            words.append(numberToWords(n / 1_00_000)).append(" lakh ");
+            n = n % 1_00_000;
+        }
+        if (n >= 1000) {
+            words.append(numberToWords(n / 1000)).append(" thousand ");
+            n = n % 1000;
+        }
+        if (n >= 100) {
+            words.append(numberToWords(n / 100)).append(" hundred ");
+            n = n % 100;
+        }
+        if (n > 0) {
+            if (!words.isEmpty()) words.append("and ");
+            if (n < 20) words.append(ones[(int) n]);
+            else {
+                words.append(tens[(int) (n / 10)]);
+                if ((n % 10) > 0) words.append(" ").append(ones[(int) (n % 10)]);
+            }
+        }
+        return words.toString().trim();
+    }
+
+    private String capitalizeFirst(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 }

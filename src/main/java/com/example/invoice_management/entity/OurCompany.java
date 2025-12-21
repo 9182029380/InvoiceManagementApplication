@@ -45,6 +45,9 @@ public class OurCompany {
     @Column(nullable = false)
     private String phone;
 
+    @Column(name = "contact_person")
+    private String contactPerson;
+
     @Column(name = "bank_address")
     private String bankAddress;
 

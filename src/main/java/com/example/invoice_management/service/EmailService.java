@@ -15,57 +15,68 @@ public class EmailService {
 
     public void sendInvoiceEmail(Invoice invoice, String pdfPath) {
         try {
+            // Validate PDF file exists
+            File pdfFile = new File(pdfPath);
+            if (!pdfFile.exists()) {
+                throw new RuntimeException("Invoice PDF file not found at: " + pdfPath);
+            }
+
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             String clientEmail = invoice.getPurchaseOrder().getClientCompany().getEmail();
+            if (clientEmail == null || clientEmail.isEmpty()) {
+                throw new RuntimeException("Client email is not set for company: " +
+                    invoice.getPurchaseOrder().getClientCompany().getCompanyName());
+            }
+
             String subject = "Invoice " + invoice.getInvoiceNumber() + " - "
                     + invoice.getOurCompany().getCompanyName();
 
+            String contactPerson = invoice.getOurCompany().getContactPerson() != null
+                ? invoice.getOurCompany().getContactPerson()
+                : "Sales Team";
+
             String body = String.format("""
                 Dear %s,
-                
-                Please find attached the invoice for the training services as per PO Number: %s
-                
+
+                We are pleased to inform you that the training services as outlined in the Purchase Order (PO) have been successfully completed.
+
+                As discussed, we are raising the invoice in accordance with the agreed terms and conditions mentioned in the PO. Kindly find the attached invoice for your reference and initiate the payment process as per the PO agreement.
+
                 Invoice Details:
+                Purchase Order Number: %s
                 Invoice Number: %s
                 Invoice Date: %s
-                Amount: ₹%.2f
-                
-                Please process the payment at your earliest convenience.
-                
-                Bank Details:
-                Bank Name: %s
-                Account Number: %s
-                IFSC Code: %s
-                
-                Thank you for your business!
-                
-                Best Regards,
+                Total Amount: ₹%.2f
+
+                Please let us know if any additional information or documentation is required from our end to proceed with the payment.
+
+                Thank you for your continued support and cooperation.
+
+                Warm regards,
                 %s
                 %s
+                📞 +91 91820 92380
                 """,
                     invoice.getPurchaseOrder().getClientCompany().getCompanyName(),
                     invoice.getPurchaseOrder().getPoNumber(),
                     invoice.getInvoiceNumber(),
                     invoice.getInvoiceDate(),
                     invoice.getTotalAmount(),
-                    invoice.getOurCompany().getBankName(),
-                    invoice.getOurCompany().getAccountNumber(),
-                    invoice.getOurCompany().getIfscCode(),
-                    invoice.getOurCompany().getCompanyName(),
-                    invoice.getOurCompany().getEmail()
+                    contactPerson,
+                    invoice.getOurCompany().getCompanyName()
             );
 
             helper.setTo(clientEmail);
             helper.setSubject(subject);
             helper.setText(body);
-            helper.addAttachment(new File(pdfPath).getName(), new File(pdfPath));
+            helper.addAttachment(pdfFile.getName(), pdfFile);
 
             mailSender.send(message);
 
         } catch (Exception e) {
-            throw new RuntimeException("Error sending email: " + e.getMessage());
+            throw new RuntimeException("Error sending email: " + e.getMessage(), e);
         }
     }
 }
